@@ -178,8 +178,12 @@ async function fetchResults(token, filter = {}) {
 }
 
 // src/commands/results.ts
+function calcPaceTenths(distanceM, timeTenths) {
+  if (distanceM === 0) return 0;
+  return Math.round(timeTenths / distanceM * 500);
+}
 function formatPace(tenths) {
-  const totalSec = Math.round(tenths / 10);
+  const totalSec = Math.floor(tenths / 10);
   const min = Math.floor(totalSec / 60);
   const sec = totalSec % 60;
   const frac = tenths % 10;
@@ -196,10 +200,11 @@ function formatTime(tenths) {
 }
 function printResult(r) {
   const dist = r.distance >= 1e3 ? `${(r.distance / 1e3).toFixed(1)}k` : `${r.distance}m`;
-  const pace = formatPace(r.pace);
+  const paceTenths = r.pace ?? calcPaceTenths(r.distance, r.time);
+  const pace = formatPace(paceTenths);
   const time = formatTime(r.time);
   const sr = r.stroke_rate ? ` ${r.stroke_rate}spm` : "";
-  console.log(`  ${r.date}  ${r.type.padEnd(8)}  ${dist.padEnd(7)}  ${time.padEnd(10)}  ${pace}/500m${sr}`);
+  console.log(`  ${r.date.slice(0, 10)}  ${r.type.padEnd(8)}  ${dist.padEnd(7)}  ${time.padEnd(10)}  ${pace}/500m${sr}`);
 }
 function registerResultsCommand(program2) {
   program2.command("results").description("List your Concept2 workouts").option("--type <type>", "Filter by machine: rower, skierg, bikeerg").option("--from <date>", "Start date (YYYY-MM-DD)").option("--to <date>", "End date (YYYY-MM-DD)").option("--limit <n>", "Max results to show", "50").option("--json", "Output raw JSON").action(async (opts) => {
@@ -253,8 +258,12 @@ function getWeekKey(dateStr) {
 function getMonthKey(dateStr) {
   return dateStr.slice(0, 7);
 }
+function calcPaceTenths2(distanceM, timeTenths) {
+  if (distanceM === 0) return 0;
+  return Math.round(timeTenths / distanceM * 500);
+}
 function computeStats(results) {
-  const paces = results.map((r) => r.pace);
+  const paces = results.map((r) => r.pace ?? calcPaceTenths2(r.distance, r.time));
   const totalDist = results.reduce((s, r) => s + r.distance, 0);
   const avgPace = paces.reduce((s, p) => s + p, 0) / paces.length;
   const bestPace = Math.min(...paces);

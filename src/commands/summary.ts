@@ -35,8 +35,13 @@ interface PeriodStats {
   paces: number[];
 }
 
+function calcPaceTenths(distanceM: number, timeTenths: number): number {
+  if (distanceM === 0) return 0;
+  return Math.round((timeTenths / distanceM) * 500);
+}
+
 function computeStats(results: C2Result[]): PeriodStats {
-  const paces = results.map(r => r.pace);
+  const paces = results.map(r => r.pace ?? calcPaceTenths(r.distance, r.time));
   const totalDist = results.reduce((s, r) => s + r.distance, 0);
   const avgPace = paces.reduce((s, p) => s + p, 0) / paces.length;
   const bestPace = Math.min(...paces);

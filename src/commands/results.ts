@@ -3,8 +3,14 @@ import { loadConfig, getValidToken } from "../auth.js";
 import { fetchResults } from "../api.js";
 import type { C2Result } from "../types.js";
 
+function calcPaceTenths(distanceM: number, timeTenths: number): number {
+  // pace = time per 500m in tenths of seconds
+  if (distanceM === 0) return 0;
+  return Math.round((timeTenths / distanceM) * 500);
+}
+
 function formatPace(tenths: number): string {
-  const totalSec = Math.round(tenths / 10);
+  const totalSec = Math.floor(tenths / 10);
   const min = Math.floor(totalSec / 60);
   const sec = totalSec % 60;
   const frac = tenths % 10;
@@ -23,10 +29,11 @@ function formatTime(tenths: number): string {
 
 function printResult(r: C2Result): void {
   const dist = r.distance >= 1000 ? `${(r.distance / 1000).toFixed(1)}k` : `${r.distance}m`;
-  const pace = formatPace(r.pace);
+  const paceTenths = r.pace ?? calcPaceTenths(r.distance, r.time);
+  const pace = formatPace(paceTenths);
   const time = formatTime(r.time);
   const sr = r.stroke_rate ? ` ${r.stroke_rate}spm` : "";
-  console.log(`  ${r.date}  ${r.type.padEnd(8)}  ${dist.padEnd(7)}  ${time.padEnd(10)}  ${pace}/500m${sr}`);
+  console.log(`  ${r.date.slice(0,10)}  ${r.type.padEnd(8)}  ${dist.padEnd(7)}  ${time.padEnd(10)}  ${pace}/500m${sr}`);
 }
 
 export function registerResultsCommand(program: Command): void {
